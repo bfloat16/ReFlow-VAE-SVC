@@ -6,38 +6,8 @@ import torch
 import random
 import librosa
 from tqdm import tqdm
+from tools.utils import traverse_dir
 from torch.utils.data import Dataset
-
-def traverse_dir(root_dir, extensions, amount=None, str_include=None, str_exclude=None, is_pure=False, is_sort=False, is_ext=True):
-    file_list = []
-    cnt = 0
-    for root, _, files in os.walk(root_dir):
-        for file in files:
-            if any([file.endswith(f".{ext}") for ext in extensions]):
-                # path
-                mix_path = os.path.join(root, file)
-                pure_path = mix_path[len(root_dir)+1:] if is_pure else mix_path
-
-                # amount
-                if (amount is not None) and (cnt == amount):
-                    if is_sort:
-                        file_list.sort()
-                    return file_list
-                
-                # check string
-                if (str_include is not None) and (str_include not in pure_path):
-                    continue
-                if (str_exclude is not None) and (str_exclude in pure_path):
-                    continue
-                
-                if not is_ext:
-                    ext = pure_path.split('.')[-1]
-                    pure_path = pure_path[:-(len(ext)+1)]
-                file_list.append(pure_path)
-                cnt += 1
-    if is_sort:
-        file_list.sort()
-    return file_list
 
 def get_data_loaders(args, whole_audio=False):
     data_train = AudioDataset(
@@ -116,7 +86,7 @@ class AudioDataset(Dataset):
             aug_vol = torch.from_numpy(aug_vol).float().unsqueeze(-1).to(device)
 
             dirname_split = re.split(r"_|\-", os.path.dirname(name_ext), 2)[0]
-            spk_id = self.spk_dict.get(dirname_split, 0)
+            spk_id = self.spk_dict.get(dirname_split)
             if spk_id > n_spk:
                 raise ValueError(f" [x] spk_id {spk_id} is larger than n_spk {n_spk}")
             spk_id = torch.LongTensor(np.array([spk_id])).to(device)
@@ -161,6 +131,8 @@ class AudioDataset(Dataset):
     def __getitem__(self, file_idx):
         name_ext = self.paths[file_idx]
         data_buffer = self.data_buffer[name_ext]
+        if data_buffer['duration'] < (self.waveform_sec + 0.1):
+            return self.__getitem__((file_idx + 1) % len(self.paths))
         return self.get_data(name_ext, data_buffer)
 
     def get_data(self, name_ext, data_buffer):
@@ -181,7 +153,7 @@ class AudioDataset(Dataset):
             mel = os.path.join(self.path_root, mel_key, name_ext) + '.npy'
             mel = np.load(mel)
             mel = mel[start_frame : start_frame + units_frame_len]
-            mel = torch.from_numpy(mel).float() 
+            mel = torch.from_numpy(mel).float()
         else:
             mel = mel[start_frame : start_frame + units_frame_len]
             

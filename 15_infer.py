@@ -9,17 +9,16 @@ import torch.nn.functional as F
 from ast import literal_eval
 from tools.slicer import Slicer
 from models.reflow.extractors import F0_Extractor, Volume_Extractor, Units_Encoder
-from models.reflow.vocoder import load_model_vocoder
+from models.reflow.main import load_model_vocoder
 from tqdm import tqdm
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet/model_190000.pt')
-    parser.add_argument("-d","--device", type=str, default='auto', help="cpu/cuda/auto")
+    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet/model_6000.pt')
     parser.add_argument("-i", "--input", type=str, default='晴る.wav')
     parser.add_argument("-o", "--output", type=str, default='晴る_12.wav')
     parser.add_argument("-sid", "--source_spk_id", type=str, default='none', help="source speaker id (for multi-speaker model) | default: none")
-    parser.add_argument("-tid", "--target_spk_id", type=str, default=12, help="target speaker id (for multi-speaker model) | default: 1")
+    parser.add_argument("-tid", "--target_spk_id", type=str, default=0, help="target speaker id (for multi-speaker model) | default: 0")
     parser.add_argument(
         "-mix",
         "--spk_mix_dict",
@@ -115,18 +114,10 @@ def cross_fade(a: np.ndarray, b: np.ndarray, idx: int):
 
 if __name__ == '__main__':
     cmd = parse_args()
-
-    device = cmd.device
-    if cmd.device == 'auto':
-        if torch.cuda.is_available():
-            device = 'cuda'
-        else:
-            device = 'cpu'
-    else:
-        raise ValueError('Invalid device type: ' + cmd.device)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
     # load reflow model
-    model, vocoder, args = load_model_vocoder(cmd.model_ckpt, device=device)
+    model, vocoder, args = load_model_vocoder(cmd.model_ckpt)
     
     # load input
     audio, sample_rate = librosa.load(cmd.input, sr=None)
@@ -165,7 +156,7 @@ if __name__ == '__main__':
     # source speaker id
     if cmd.source_spk_id == 'none':
         # load units encoder
-        units_encoder = Units_Encoder(args.data.encoder, args.data.encoder_ckpt, args.data.encoder_sample_rate, args.data.encoder_hop_size, device=device)
+        units_encoder = Units_Encoder(args.data.encoder, args.data.encoder_ckpt, args.data.encoder_sample_rate, args.data.encoder_hop_size)
         # extract volume 
         volume_extractor = Volume_Extractor(hop_size)
         volume = volume_extractor.extract(audio)

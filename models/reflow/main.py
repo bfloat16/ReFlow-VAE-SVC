@@ -76,9 +76,9 @@ class Unit2Wav_VAE(nn.Module):
             if spk_mix_dict is not None:
                 for k, v in spk_mix_dict.items():
                     spk_id_torch = torch.LongTensor(np.array([[k]])).to(units.device)
-                    cond = cond + v * self.spk_embed(spk_id_torch - 1)
+                    cond = cond + v * self.spk_embed(spk_id_torch)
             else:
-                cond = cond + self.spk_embed(spk_id - 1)
+                cond = cond + self.spk_embed(spk_id)
         if self.aug_shift_embed is not None and aug_shift is not None:
             cond = cond + self.aug_shift_embed(aug_shift / 5)
         
