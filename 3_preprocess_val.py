@@ -143,7 +143,7 @@ if __name__ == '__main__':
     mel_extractor = None
     use_pitch_aug = False
     if args.model.type in ['RectifiedFlow_VAE']:
-        mel_extractor = Vocoder(args.vocoder.type, args.vocoder.ckpt, device = device)
+        mel_extractor = Vocoder(args.vocoder.type, args.vocoder.ckpt)
         if mel_extractor.vocoder_sample_rate != sample_rate or mel_extractor.vocoder_hop_size != hop_size:
             mel_extractor = None
             print('Unmatch vocoder parameters, mel extraction is ignored!')

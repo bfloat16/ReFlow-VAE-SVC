@@ -3,7 +3,8 @@ import torch
 from torch.optim import lr_scheduler
 from tools import utils
 from models.reflow.data_loaders import get_data_loaders
-from models.reflow.vocoder import Vocoder, Unit2Wav_VAE
+from models.reflow.vocoder import Vocoder
+from models.reflow.main import Unit2Wav_VAE
 from models.reflow.solver import train
 
 def parse_args(args=None, namespace=None):
@@ -19,14 +20,11 @@ if __name__ == '__main__':
     print(' >    exp:', args.env.expdir)
     
     # load vocoder
-    vocoder = Vocoder(args.vocoder.type, args.vocoder.ckpt, device=args.device)
+    vocoder = Vocoder(args.vocoder.type, args.vocoder.ckpt)
     
     # load model            
     if args.model.type == 'RectifiedFlow_VAE':
         model = Unit2Wav_VAE(
-                    args.data.sampling_rate,
-                    args.data.block_size,
-                    args.model.win_length,
                     args.data.encoder_out_channels, 
                     args.model.n_spk,
                     args.model.use_pitch_aug,

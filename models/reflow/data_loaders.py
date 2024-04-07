@@ -4,6 +4,7 @@ import re
 import numpy as np
 import torch
 import random
+import librosa
 from tqdm import tqdm
 from torch.utils.data import Dataset
 
@@ -99,6 +100,9 @@ class AudioDataset(Dataset):
         else:
             print('Load the f0, volume data from :', path_root)
         for name_ext in tqdm(self.paths, total=len(self.paths)):
+            path_audio = os.path.join(self.path_root, 'audio', name_ext)
+            duration = librosa.get_duration(path=path_audio, sr=self.sample_rate)
+
             path_f0 = os.path.join(self.path_root, 'f0', name_ext) + '.npy'
             f0 = np.load(path_f0)
             f0 = torch.from_numpy(f0).float().unsqueeze(-1).to(device)
@@ -136,6 +140,7 @@ class AudioDataset(Dataset):
                     units = units.half()
                     
                 self.data_buffer[name_ext] = {
+                        'duration': duration,
                         'mel': mel,
                         'aug_mel': aug_mel,
                         'units': units,
@@ -146,6 +151,7 @@ class AudioDataset(Dataset):
                         }
             else:
                 self.data_buffer[name_ext] = {
+                        'duration': duration,
                         'f0': f0,
                         'volume': volume,
                         'aug_vol': aug_vol,

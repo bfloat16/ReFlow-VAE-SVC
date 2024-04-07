@@ -1,8 +1,8 @@
 import os
 import torch
 import librosa
-from logger.saver import Saver
-from logger import utils
+from tools.saver import Saver
+from tools import utils
 from torch import autocast
 
 def test(args, model, vocoder, loader_test, saver):

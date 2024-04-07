@@ -25,7 +25,7 @@ def preprocess(id, path, filelist, device, encoder_type, encoder_ckpt, encoder_s
     file_chunk = filelist[id::num_processes]
     
     volume_extractor = Volume_Extractor(hop_size)
-    units_encoder = Units_Encoder(encoder_type, encoder_ckpt, encoder_sample_rate, encoder_hop_size, device=device)    
+    units_encoder = Units_Encoder(encoder_type, encoder_ckpt, encoder_sample_rate, encoder_hop_size)    
 
     filelist =  traverse_dir(path_srcdir, extensions=extensions, is_pure=True, is_sort=True, is_ext=True)
      
