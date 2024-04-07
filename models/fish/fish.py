@@ -495,7 +495,7 @@ class Firefly(nn.Module):
         
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        state_dict = torch.load(ckpt_path, map_location=self.device)['state_dict']
+        state_dict = torch.load(ckpt_path, map_location=self.device)
 
         self.load_state_dict(state_dict, strict=True)
         self.head.remove_parametrizations()

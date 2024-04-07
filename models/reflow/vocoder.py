@@ -15,7 +15,7 @@ class Vocoder:
         elif vocoder_type == 'nsf-hifigan-log10':
             self.vocoder = NsfHifiGANLog10(vocoder_ckpt)
         elif vocoder_type == 'fish':
-            self.vocoder = Firefly(vocoder_ckpt)
+            self.vocoder = FireFlyGAN(vocoder_ckpt)
         else:
             raise ValueError(f" [Error] Unknown vocoder: {vocoder_type}")
             
@@ -59,7 +59,7 @@ class FireFlyGAN(torch.nn.Module):
         self.model.eval()
         self.model.to(self.device)
         self.sr = config.sampling_rate
-        self.hop_size = config.hop_size
+        self._hop_size = config.hop_size
         self.dim = config.num_mels
         self.stft = STFT(
             self.sr,
@@ -75,7 +75,7 @@ class FireFlyGAN(torch.nn.Module):
         return self.sr
 
     def hop_size(self):
-        return self.hop_size
+        return self._hop_size
 
     def dimension(self):
         return self.dim

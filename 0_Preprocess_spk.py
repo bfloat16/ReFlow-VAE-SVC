@@ -17,5 +17,7 @@ start_index = len(spk_dict) + 1
 for i, folder in enumerate(sorted_subfolders, start=start_index):
     spk_dict[folder] = i
 
+data['spk_dict'] = spk_dict
+
 with open(yaml_file_path, 'w') as file:
-    yaml.dump({'spk_dict': spk_dict}, file, allow_unicode=True)
+    yaml.dump(data, file, allow_unicode=True)

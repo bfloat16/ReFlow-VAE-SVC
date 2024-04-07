@@ -28,7 +28,7 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
     file_chunk = filelist[id::num_processes]
     
     f0_extractor = F0_Extractor(f0_extractor_type, sample_rate, hop_size, f0_min, f0_max)
-    mel_extractor = Vocoder(vocoder_type, vocoder_ckpt, device=device)
+    mel_extractor = Vocoder(vocoder_type, vocoder_ckpt)
     if mel_extractor.vocoder_sample_rate != sample_rate or mel_extractor.vocoder_hop_size != hop_size:
         print('Error: Unmatch vocoder parameters')
         return None

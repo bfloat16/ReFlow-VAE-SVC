@@ -44,6 +44,7 @@ def get_data_loaders(args, whole_audio=False):
         waveform_sec=args.data.duration,
         hop_size=args.data.block_size,
         sample_rate=args.data.sampling_rate,
+        spk_dict=args.spk_dict,
         load_all_data=args.train.cache_all_data,
         whole_audio=whole_audio,
         extensions=args.data.extensions,
@@ -53,7 +54,7 @@ def get_data_loaders(args, whole_audio=False):
         use_aug=True
         )
     loader_train = torch.utils.data.DataLoader(
-        data_train ,
+        data_train,
         batch_size=args.train.batch_size if not whole_audio else 1,
         shuffle=True,
         num_workers=args.train.num_workers if args.train.cache_device=='cpu' else 0,
@@ -65,6 +66,7 @@ def get_data_loaders(args, whole_audio=False):
         waveform_sec=args.data.duration,
         hop_size=args.data.block_size,
         sample_rate=args.data.sampling_rate,
+        spk_dict=args.spk_dict,
         load_all_data=args.train.cache_all_data,
         whole_audio=True,
         extensions=args.data.extensions,
@@ -80,7 +82,7 @@ def get_data_loaders(args, whole_audio=False):
     return loader_train, loader_valid 
 
 class AudioDataset(Dataset):
-    def __init__(self, path_root, waveform_sec, hop_size, sample_rate, load_all_data=True, whole_audio=False, extensions=['wav'], n_spk=1, device='cpu', fp16=False, use_aug=False):
+    def __init__(self, path_root, waveform_sec, hop_size, sample_rate, spk_dict, load_all_data=True, whole_audio=False, extensions=['wav'], n_spk=1, device='cpu', fp16=False, use_aug=False):
         super().__init__()
         self.waveform_sec = waveform_sec
         self.sample_rate = sample_rate
@@ -91,6 +93,7 @@ class AudioDataset(Dataset):
         self.use_aug = use_aug
         self.data_buffer={}
         self.pitch_aug_dict = np.load(os.path.join(self.path_root, 'pitch_aug_dict.npy'), allow_pickle=True).item()
+        self.spk_dict = spk_dict
         if load_all_data:
             print('Load all the data from :', path_root)
         else:
@@ -107,14 +110,11 @@ class AudioDataset(Dataset):
             path_augvol = os.path.join(self.path_root, 'aug_vol', name_ext) + '.npy'
             aug_vol = np.load(path_augvol)
             aug_vol = torch.from_numpy(aug_vol).float().unsqueeze(-1).to(device)
-                        
-            if n_spk > 1:
-                dirname_split = re.split(r"_|\-", os.path.dirname(name_ext), 2)[0]
-                spk_id = int(dirname_split) if str.isdigit(dirname_split) else 0
-                if spk_id < 1 or spk_id > n_spk:
-                    raise ValueError('Error:spk_id must be a positive integer from 1 to n_spk ')
-            else:
-                spk_id = 1
+
+            dirname_split = re.split(r"_|\-", os.path.dirname(name_ext), 2)[0]
+            spk_id = self.spk_dict.get(dirname_split, 0)
+            if spk_id > n_spk:
+                raise ValueError(f" [x] spk_id {spk_id} is larger than n_spk {n_spk}")
             spk_id = torch.LongTensor(np.array([spk_id])).to(device)
 
             if load_all_data:
