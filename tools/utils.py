@@ -3,16 +3,7 @@ import yaml
 import json
 import torch
 
-def traverse_dir(
-        root_dir,
-        extensions,
-        amount=None,
-        str_include=None,
-        str_exclude=None,
-        is_pure=False,
-        is_sort=False,
-        is_ext=True):
-
+def traverse_dir(root_dir, extensions, amount=None, str_include=None, str_exclude=None, is_pure=False, is_sort=False, is_ext=True):
     file_list = []
     cnt = 0
     for root, _, files in os.walk(root_dir):

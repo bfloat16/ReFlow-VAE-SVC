@@ -14,11 +14,11 @@ from tqdm import tqdm
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet/model_6000.pt')
+    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet/model_70000.pt')
     parser.add_argument("-i", "--input", type=str, default='晴る.wav')
-    parser.add_argument("-o", "--output", type=str, default='晴る_12.wav')
+    parser.add_argument("-o", "--output", type=str, default='晴る_2.wav')
     parser.add_argument("-sid", "--source_spk_id", type=str, default='none', help="source speaker id (for multi-speaker model) | default: none")
-    parser.add_argument("-tid", "--target_spk_id", type=str, default=0, help="target speaker id (for multi-speaker model) | default: 0")
+    parser.add_argument("-tid", "--target_spk_id", type=str, default=2, help="target speaker id (for multi-speaker model) | default: 0")
     parser.add_argument(
         "-mix",
         "--spk_mix_dict",

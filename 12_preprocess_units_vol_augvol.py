@@ -54,7 +54,7 @@ def preprocess(id, path, filelist, device, encoder_type, encoder_ckpt, encoder_s
         units = units_t.squeeze().to('cpu').numpy()
        
         os.makedirs(os.path.dirname(path_unitsfile), exist_ok=True)
-        np.save(path_unitsfile, units)
+        np.save(path_unitsfile, units.astype(np.float16))
         os.makedirs(os.path.dirname(path_volumefile), exist_ok=True)
         np.save(path_volumefile, volume)
         os.makedirs(os.path.dirname(path_augvolfile), exist_ok=True)
@@ -76,6 +76,7 @@ if __name__ == '__main__':
     encoder_ckpt = args.data.encoder_ckpt
     encoder_sample_rate = args.data.encoder_sample_rate
     encoder_hop_size = args.data.encoder_hop_size
-
+    
+    print('Loading audio clips from :', path)
     filelist = traverse_dir(os.path.join(path, 'audio'), extensions=extensions, is_pure=True, is_sort=True, is_ext=True)
     mp.spawn(preprocess, args=(path, filelist, device, encoder_type, encoder_ckpt, encoder_sample_rate, encoder_hop_size, extensions, sample_rate, hop_size, num_processes), nprocs=num_processes, join=True)

@@ -68,11 +68,11 @@ class AudioDataset(Dataset):
         if load_all_data:
             print('Load all the data from :', path_root)
         else:
-            print('Load the f0, volume data from :', path_root)
+            print('Load the f0, volume, mel data from :', path_root)
         for name_ext in tqdm(self.paths, total=len(self.paths)):
             path_audio = os.path.join(self.path_root, 'audio', name_ext)
             duration = librosa.get_duration(path=path_audio, sr=self.sample_rate)
-
+            
             path_f0 = os.path.join(self.path_root, 'f0', name_ext) + '.npy'
             f0 = np.load(path_f0)
             f0 = torch.from_numpy(f0).float().unsqueeze(-1).to(device)
@@ -85,17 +85,16 @@ class AudioDataset(Dataset):
             aug_vol = np.load(path_augvol)
             aug_vol = torch.from_numpy(aug_vol).float().unsqueeze(-1).to(device)
 
-            dirname_split = re.split(r"_|\-", os.path.dirname(name_ext), 2)[0]
-            spk_id = self.spk_dict.get(dirname_split)
+            path_mel = os.path.join(self.path_root, 'mel', name_ext) + '.npy'
+            mel = np.load(path_mel)
+            mel = torch.from_numpy(mel).to(device)
+            
+            spk_id = self.spk_dict.get(os.path.dirname(name_ext))
             if spk_id > n_spk:
                 raise ValueError(f" [x] spk_id {spk_id} is larger than n_spk {n_spk}")
             spk_id = torch.LongTensor(np.array([spk_id])).to(device)
-
+            
             if load_all_data:
-                path_mel = os.path.join(self.path_root, 'mel', name_ext) + '.npy'
-                mel = np.load(path_mel)
-                mel = torch.from_numpy(mel).to(device)
-                
                 path_augmel = os.path.join(self.path_root, 'aug_mel', name_ext) + '.npy'
                 aug_mel = np.load(path_augmel)
                 aug_mel = torch.from_numpy(aug_mel).to(device)
@@ -125,7 +124,8 @@ class AudioDataset(Dataset):
                         'f0': f0,
                         'volume': volume,
                         'aug_vol': aug_vol,
-                        'spk_id': spk_id
+                        'spk_id': spk_id,
+                        'mel': mel
                         }
            
     def __getitem__(self, file_idx):
@@ -153,7 +153,7 @@ class AudioDataset(Dataset):
             mel = os.path.join(self.path_root, mel_key, name_ext) + '.npy'
             mel = np.load(mel)
             mel = mel[start_frame : start_frame + units_frame_len]
-            mel = torch.from_numpy(mel).float()
+            mel = torch.from_numpy(mel).float() 
         else:
             mel = mel[start_frame : start_frame + units_frame_len]
             

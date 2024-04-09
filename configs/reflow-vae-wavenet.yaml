@@ -1,6 +1,5 @@
 data:
   block_size: 512
-  cnhubertsoft_gate: 10
   duration: 1
   encoder: contentvec768l12
   encoder_ckpt: pretrain/contentvec/checkpoint_best_legacy_500.pt
@@ -28,27 +27,159 @@ model:
   n_chans: 768
   n_hidden: 256
   n_layers: 30
-  n_spk: 16
+  n_spk: 133
   type: RectifiedFlow_VAE
-  use_pitch_aug: true
+  use_pitch_aug: false
 spk_dict:
-  ATRI: 0
+  10KuroBousuku-CN: 0
+  11Barber-CN: 1
+  12ChuMing-CN: 2
+  13ChangGe-CN: 3
+  14QueHe-CN: 4
+  15QiXuan-CN: 5
+  16NamineRitsu-CN: 6
+  17LiYuan-CN: 7
+  18WenLi-CN: 8
+  19RanHuhu-CN: 9
+  1Crimson-CN: 10
+  20HuoLian-CN: 11
+  21XiaoYe-CN: 12
+  22QiLi-CN: 13
+  23QiFu-CN: 14
+  24XiaoMo-CN: 15
+  25YunHao-CN: 16
+  26ChuCi-CN: 17
+  27Tarara-CN: 18
+  28LuanMing-CN: 19
+  29HiragiYuki-CN: 20
+  2Orange-CN: 21
+  30TuYuan-CN: 22
+  3Tangerine-CN: 23
+  4Growl-CN: 24
+  5Steel-CN: 25
+  6Ghost-CN: 26
+  7David-CN: 27
+  8Lien-CN: 28
+  9Bianca-CN: 29
+  OpenSinger_ManRaw_0: 30
+  OpenSinger_ManRaw_1: 31
+  OpenSinger_ManRaw_10: 32
+  OpenSinger_ManRaw_11: 33
+  OpenSinger_ManRaw_12: 34
+  OpenSinger_ManRaw_13: 35
+  OpenSinger_ManRaw_14: 36
+  OpenSinger_ManRaw_15: 37
+  OpenSinger_ManRaw_16: 38
+  OpenSinger_ManRaw_17: 39
+  OpenSinger_ManRaw_18: 40
+  OpenSinger_ManRaw_19: 41
+  OpenSinger_ManRaw_2: 42
+  OpenSinger_ManRaw_20: 43
+  OpenSinger_ManRaw_21: 44
+  OpenSinger_ManRaw_22: 45
+  OpenSinger_ManRaw_23: 46
+  OpenSinger_ManRaw_24: 47
+  OpenSinger_ManRaw_25: 48
+  OpenSinger_ManRaw_26: 49
+  OpenSinger_ManRaw_27: 50
+  OpenSinger_ManRaw_3: 51
+  OpenSinger_ManRaw_4: 52
+  OpenSinger_ManRaw_5: 53
+  OpenSinger_ManRaw_6: 54
+  OpenSinger_ManRaw_7: 55
+  OpenSinger_ManRaw_8: 56
+  OpenSinger_ManRaw_9: 57
+  OpenSinger_WomanRaw_0: 58
+  OpenSinger_WomanRaw_1: 59
+  OpenSinger_WomanRaw_10: 60
+  OpenSinger_WomanRaw_11: 61
+  OpenSinger_WomanRaw_12: 62
+  OpenSinger_WomanRaw_13: 63
+  OpenSinger_WomanRaw_14: 64
+  OpenSinger_WomanRaw_15: 65
+  OpenSinger_WomanRaw_16: 66
+  OpenSinger_WomanRaw_17: 67
+  OpenSinger_WomanRaw_18: 68
+  OpenSinger_WomanRaw_19: 69
+  OpenSinger_WomanRaw_2: 70
+  OpenSinger_WomanRaw_20: 71
+  OpenSinger_WomanRaw_21: 72
+  OpenSinger_WomanRaw_22: 73
+  OpenSinger_WomanRaw_23: 74
+  OpenSinger_WomanRaw_24: 75
+  OpenSinger_WomanRaw_25: 76
+  OpenSinger_WomanRaw_26: 77
+  OpenSinger_WomanRaw_27: 78
+  OpenSinger_WomanRaw_28: 79
+  OpenSinger_WomanRaw_29: 80
+  OpenSinger_WomanRaw_3: 81
+  OpenSinger_WomanRaw_30: 82
+  OpenSinger_WomanRaw_31: 83
+  OpenSinger_WomanRaw_32: 84
+  OpenSinger_WomanRaw_33: 85
+  OpenSinger_WomanRaw_34: 86
+  OpenSinger_WomanRaw_35: 87
+  OpenSinger_WomanRaw_36: 88
+  OpenSinger_WomanRaw_37: 89
+  OpenSinger_WomanRaw_38: 90
+  OpenSinger_WomanRaw_39: 91
+  OpenSinger_WomanRaw_4: 92
+  OpenSinger_WomanRaw_40: 93
+  OpenSinger_WomanRaw_41: 94
+  OpenSinger_WomanRaw_42: 95
+  OpenSinger_WomanRaw_43: 96
+  OpenSinger_WomanRaw_44: 97
+  OpenSinger_WomanRaw_45: 98
+  OpenSinger_WomanRaw_46: 99
+  OpenSinger_WomanRaw_47: 100
+  OpenSinger_WomanRaw_5: 101
+  OpenSinger_WomanRaw_6: 102
+  OpenSinger_WomanRaw_7: 103
+  OpenSinger_WomanRaw_8: 104
+  OpenSinger_WomanRaw_9: 105
+  Opencpop: 106
+  Popcs: 107
+  m4singer_Alto-1: 108
+  m4singer_Alto-2: 109
+  m4singer_Alto-3: 110
+  m4singer_Alto-4: 111
+  m4singer_Alto-5: 112
+  m4singer_Alto-6: 113
+  m4singer_Alto-7: 114
+  m4singer_Bass-1: 115
+  m4singer_Bass-2: 116
+  m4singer_Bass-3: 117
+  m4singer_Soprano-1: 118
+  m4singer_Soprano-2: 119
+  m4singer_Soprano-3: 120
+  m4singer_Tenor-1: 121
+  m4singer_Tenor-2: 122
+  m4singer_Tenor-3: 123
+  m4singer_Tenor-4: 124
+  m4singer_Tenor-5: 125
+  m4singer_Tenor-6: 126
+  m4singer_Tenor-7: 127
+  東北きりたん: 128
+  東北イタコ: 129
+  派蒙_CHS: 130
+  派蒙_EN: 131
+  派蒙_JA: 132
 train:
   amp_dtype: fp16
-  batch_size: 100
-  cache_all_data: true
+  batch_size: 200
+  cache_all_data: false
   cache_device: cpu
   cache_fp16: true
-  decay_step: 50000
+  decay_step: 100000
   epochs: 100000
   gamma: 0.5
   interval_force_save: 10000
   interval_log: 100
-  interval_val: 2000
+  interval_val: 5000
   lr: 0.00015
   num_workers: 4
   save_opt: false
   weight_decay: 0
 vocoder:
-  ckpt: pretrain/fish/firefly-gan-base-generator.ckpt
-  type: fish
+  ckpt: pretrain/nsf_hifigan/model
+  type: nsf-hifigan

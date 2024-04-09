@@ -64,7 +64,7 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
             max_shift = min(1, np.log10(1/max_amp))
             log10_vol_shift = random.uniform(-1, max_shift)
             if use_pitch_aug:
-                keyshift = random.uniform(-5, 5)
+                keyshift = random.uniform(-1, 1)
             else:
                 keyshift = 0
             
@@ -74,9 +74,9 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
             os.makedirs(os.path.dirname(path_f0file), exist_ok=True)
             np.save(path_f0file, f0)
             os.makedirs(os.path.dirname(path_melfile), exist_ok=True)
-            np.save(path_melfile, mel)
+            np.save(path_melfile, mel.astype(np.float16))
             os.makedirs(os.path.dirname(path_augmelfile), exist_ok=True)
-            np.save(path_augmelfile, aug_mel)
+            np.save(path_augmelfile, aug_mel.astype(np.float16))
             pitch_aug_dict[file] = keyshift
         else:
             print('\n[Error] F0 extraction failed: ' + path_srcfile)
@@ -106,6 +106,7 @@ if __name__ == '__main__':
 
     pitch_aug_dict = mp.Manager().dict()
 
+    print('Loading audio clips from :', path)
     filelist = traverse_dir(os.path.join(path, 'audio'), extensions=extensions, is_pure=True, is_sort=True, is_ext=True)
     mp.spawn(preprocess, args=(path, filelist, device, f0_extractor_type, sample_rate, hop_size, f0_max, f0_min, vocoder_type, vocoder_ckpt, use_pitch_aug, num_processes, pitch_aug_dict), nprocs=num_processes)
 

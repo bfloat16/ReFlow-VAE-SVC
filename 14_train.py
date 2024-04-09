@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # load model            
     if args.model.type == 'RectifiedFlow_VAE':
         model = Unit2Wav_VAE(
-                    args.data.encoder_out_channels, 
+                    args.data.encoder_out_channels,
                     args.model.n_spk,
                     args.model.use_pitch_aug,
                     vocoder.dimension,

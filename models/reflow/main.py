@@ -15,7 +15,7 @@ class DotDict(dict):
     __setattr__ = dict.__setitem__    
     __delattr__ = dict.__delitem__
 
-def load_model_vocoder(model_path,):
+def load_model_vocoder(model_path):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config_file = os.path.join(os.path.split(model_path)[0], 'config.yaml')
     with open(config_file, "r") as config:
@@ -63,7 +63,7 @@ class Unit2Wav_VAE(nn.Module):
         else:
             raise ValueError(f" [x] Unknown Backbone: {back_bone}")
             
-    def forward(self, units, f0, volume, spk_id=None, spk_mix_dict=None, aug_shift=None, vocoder=None, gt_spec=None, infer=True, return_wav=False, infer_step=10, method='euler', t_start=0.0, use_tqdm=True):
+    def forward(self, units, f0, volume, spk_id=None, spk_mix_dict=None, aug_shift=None, vocoder=None, gt_spec=None, infer=True, return_wav=False, infer_step=50, method='euler', t_start=0.0, use_tqdm=True):
         '''
         input: 
             B x n_frames x n_unit
@@ -87,7 +87,7 @@ class Unit2Wav_VAE(nn.Module):
         
         # vae noise
         x += torch.randn_like(x)
-        
+        # 
         x = self.reflow_model(infer=infer, x_start=x, x_end=gt_spec, cond=cond, infer_step=infer_step, method='euler', use_tqdm=True)
         
         if return_wav and infer:
@@ -95,14 +95,14 @@ class Unit2Wav_VAE(nn.Module):
         else:
             return x
             
-    def vae_infer(self, input_mel, input_f0, input_spk_id, output_f0, output_spk_id=None, spk_mix_dict=None, aug_shift=None, infer_step=10, method='euler'):
-        source_cond = self.f0_embed((1+ input_f0 / 700).log()) + self.spk_embed(input_spk_id - 1)
+    def vae_infer(self, input_mel, input_f0, input_spk_id, output_f0, output_spk_id=None, spk_mix_dict=None, aug_shift=None, infer_step=50, method='euler'):
+        source_cond = self.f0_embed((1+ input_f0 / 700).log()) + self.spk_embed(input_spk_id)
         target_cond = self.f0_embed((1+ output_f0 / 700).log())
         if self.n_spk is not None and self.n_spk > 1:
             if spk_mix_dict is not None:
                 for k, v in spk_mix_dict.items():
                     spk_id_torch = torch.LongTensor(np.array([[k]])).to(input_mel.device)
-                    target_cond = target_cond + v * self.spk_embed(spk_id_torch - 1)
+                    target_cond = target_cond + v * self.spk_embed(spk_id_torch)
             else:
                 target_cond = target_cond + self.spk_embed(output_spk_id - 1)
         if self.aug_shift_embed is not None and aug_shift is not None:
