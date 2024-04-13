@@ -4,10 +4,7 @@ from torch import nn
 from tqdm import tqdm
 
 class Bi_RectifiedFlow(nn.Module):
-    def __init__(self, 
-                velocity_fn,
-                spec_min=-12, 
-                spec_max=2):
+    def __init__(self, velocity_fn, spec_min=-12, spec_max=2):
         super().__init__()
         self.velocity_fn = velocity_fn
         self.spec_min = spec_min

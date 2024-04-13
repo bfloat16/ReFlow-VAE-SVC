@@ -16,8 +16,6 @@ if __name__ == '__main__':
     cmd = parse_args()
 
     args = utils.load_config_yaml(cmd.config)
-    print(' > config:', cmd.config)
-    print(' >    exp:', args.env.expdir)
     
     # load vocoder
     vocoder = Vocoder(args.vocoder.type, args.vocoder.ckpt)
@@ -32,7 +30,9 @@ if __name__ == '__main__':
                     args.model.n_layers,
                     args.model.n_chans,
                     args.model.n_hidden,
-                    args.model.back_bone)    
+                    args.model.back_bone,
+                    args.model.use_attention
+                    )    
     else:
         raise ValueError(f" [x] Unknown Model: {args.model.type}")
     

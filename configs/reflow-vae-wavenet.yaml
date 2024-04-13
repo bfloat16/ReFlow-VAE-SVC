@@ -17,7 +17,7 @@ data:
   valid_path: data/val
 device: cuda
 env:
-  expdir: exp/reflowvae-wavenet
+  expdir: exp/reflowvae-wavenet-dc
   gpu_id: 0
 infer:
   infer_step: 50
@@ -29,6 +29,7 @@ model:
   n_layers: 30
   n_spk: 133
   type: RectifiedFlow_VAE
+  use_attention: false
   use_pitch_aug: false
 spk_dict:
   10KuroBousuku-CN: 0
@@ -166,16 +167,16 @@ spk_dict:
   派蒙_JA: 132
 train:
   amp_dtype: fp16
-  batch_size: 200
+  batch_size: 50
   cache_all_data: false
   cache_device: cpu
   cache_fp16: true
-  decay_step: 100000
+  decay_step: 400000
   epochs: 100000
   gamma: 0.5
   interval_force_save: 10000
   interval_log: 100
-  interval_val: 5000
+  interval_val: 10000
   lr: 0.00015
   num_workers: 4
   save_opt: false

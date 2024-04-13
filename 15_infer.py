@@ -14,29 +14,14 @@ from tqdm import tqdm
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet/model_70000.pt')
+    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet-dc/model_60000.pt')
     parser.add_argument("-i", "--input", type=str, default='晴る.wav')
-    parser.add_argument("-o", "--output", type=str, default='晴る_2.wav')
+    parser.add_argument("-o", "--output", type=str, default='晴る_108.wav')
     parser.add_argument("-sid", "--source_spk_id", type=str, default='none', help="source speaker id (for multi-speaker model) | default: none")
-    parser.add_argument("-tid", "--target_spk_id", type=str, default=2, help="target speaker id (for multi-speaker model) | default: 0")
-    parser.add_argument(
-        "-mix",
-        "--spk_mix_dict",
-        type=str,
-        required=False,
-        default="None",
-        help="mix-speaker dictionary (for multi-speaker model) | default: None",
-    )
-    parser.add_argument(
-        "-k",
-        "--key",
-        type=str,
-        required=False,
-        default=0,
-        help="key changed (number of semitones) | default: 0",
-    )
-    parser.add_argument(
-        "-f",
+    parser.add_argument("-tid", "--target_spk_id", type=str, default=108, help="target speaker id (for multi-speaker model) | default: 0")
+    parser.add_argument("-mix", "--spk_mix_dict", type=str, default="None", help="mix-speaker dictionary (for multi-speaker model) | default: None")
+    parser.add_argument("-k", "--key", type=str, default=0, help="key changed (number of semitones) | default: 0")
+    parser.add_argument("-f",
         "--formant_shift_key",
         type=str,
         required=False,
@@ -86,10 +71,7 @@ def upsample(signal, factor):
     return signal.permute(0, 2, 1)
 
 def split(audio, sample_rate, hop_size, db_thresh = -40, min_len = 5000):
-    slicer = Slicer(
-                sr=sample_rate,
-                threshold=db_thresh,
-                min_length=min_len)       
+    slicer = Slicer(sr=sample_rate, threshold=db_thresh, min_length=min_len)       
     chunks = dict(slicer.slice(audio))
     result = []
     for k, v in chunks.items():
@@ -98,9 +80,7 @@ def split(audio, sample_rate, hop_size, db_thresh = -40, min_len = 5000):
             start_frame = int(int(tag[0]) // hop_size)
             end_frame = int(int(tag[1]) // hop_size)
             if end_frame > start_frame:
-                result.append((
-                        start_frame, 
-                        audio[int(start_frame * hop_size) : int(end_frame * hop_size)]))
+                result.append((start_frame, audio[int(start_frame * hop_size) : int(end_frame * hop_size)]))
     return result
 
 def cross_fade(a: np.ndarray, b: np.ndarray, idx: int):
@@ -112,20 +92,38 @@ def cross_fade(a: np.ndarray, b: np.ndarray, idx: int):
     np.copyto(dst=result[a.shape[0]:], src=b[fade_len:])
     return result
 
+def change_rms(data1, sr1, data2, sr2, rate):  # 1是输入音频，2是输出音频,rate是2的占比 from RVC
+    # print(data1.max(),data2.max())
+    rms1 = librosa.feature.rms(
+        y=data1, frame_length=sr1 // 2 * 2, hop_length=sr1 // 2
+    )  # 每半秒一个点
+    rms2 = librosa.feature.rms(y=data2.detach().cpu().numpy(), frame_length=sr2 // 2 * 2, hop_length=sr2 // 2)
+    rms1 = torch.from_numpy(rms1).to(data2.device)
+    rms1 = F.interpolate(
+        rms1.unsqueeze(0), size=data2.shape[0], mode="linear"
+    ).squeeze()
+    rms2 = torch.from_numpy(rms2).to(data2.device)
+    rms2 = F.interpolate(
+        rms2.unsqueeze(0), size=data2.shape[0], mode="linear"
+    ).squeeze()
+    rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-6)
+    data2 *= (
+        torch.pow(rms1, torch.tensor(1 - rate))
+        * torch.pow(rms2, torch.tensor(rate - 1))
+    )
+    return data2
+
 if __name__ == '__main__':
     cmd = parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    # load reflow model
     model, vocoder, args = load_model_vocoder(cmd.model_ckpt)
     
-    # load input
     audio, sample_rate = librosa.load(cmd.input, sr=None)
     if len(audio.shape) > 1:
         audio = librosa.to_mono(audio)
     hop_size = args.data.block_size * sample_rate / args.data.sampling_rate
     
-    # get MD5 hash from wav file
     md5_hash = ""
     with open(cmd.input, 'rb') as f:
         data = f.read()

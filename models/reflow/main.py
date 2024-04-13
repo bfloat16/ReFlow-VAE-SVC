@@ -15,6 +15,15 @@ class DotDict(dict):
     __setattr__ = dict.__setitem__    
     __delattr__ = dict.__delitem__
 
+class Transpose(nn.Module):
+    def __init__(self, dims):
+        super().__init__()
+        assert len(dims) == 2, 'dims must be a tuple of two dimensions'
+        self.dims = dims
+
+    def forward(self, x):
+        return x.transpose(*self.dims)
+    
 def load_model_vocoder(model_path):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     config_file = os.path.join(os.path.split(model_path)[0], 'config.yaml')
@@ -33,7 +42,8 @@ def load_model_vocoder(model_path):
             args.model.n_layers,
             args.model.n_chans,
             args.model.n_hidden,
-            args.model.back_bone
+            args.model.back_bone,
+            args.model.use_attention
             )
     else:
         raise ValueError(f" [x] Unknown Model: {args.model.type}")
@@ -46,11 +56,26 @@ def load_model_vocoder(model_path):
     return model, vocoder, args
 
 class Unit2Wav_VAE(nn.Module):
-    def __init__(self, n_unit, n_spk, use_pitch_aug=False, out_dims=128, n_layers=6, n_chans=512, n_hidden=256, back_bone='wavenet'):
+    def __init__(self, n_unit, n_spk, use_pitch_aug=False, out_dims=128, n_layers=6, n_chans=512, n_hidden=256, back_bone='wavenet', use_attention=False):
         super().__init__()
-        self.unit_embed = nn.Linear(n_unit, out_dims)
         self.f0_embed = nn.Linear(1, n_hidden)
-        self.volume_embed = nn.Linear(1, out_dims)
+        self.use_attention = use_attention
+        if use_attention:
+            self.unit_embed = nn.Linear(n_unit, n_hidden)
+            self.volume_embed = nn.Linear(1, n_hidden)
+            self.attention = nn.Sequential(
+                nn.TransformerEncoderLayer(
+                    d_model=n_hidden,
+                    nhead=8,
+                    dim_feedforward=n_hidden * 4,
+                    dropout=0.1,
+                    activation='gelu'),
+                nn.Linear(n_hidden, out_dims)
+                )
+        else:
+            self.unit_embed = nn.Linear(n_unit, out_dims)
+            self.volume_embed = nn.Linear(1, out_dims)
+
         if use_pitch_aug:
             self.aug_shift_embed = nn.Linear(1, n_hidden, bias=False)
         else:
@@ -84,6 +109,8 @@ class Unit2Wav_VAE(nn.Module):
         
         # vae mean
         x = self.unit_embed(units) + self.volume_embed(volume)
+        if self.use_attention:
+            x = self.attention(x)
         
         # vae noise
         x += torch.randn_like(x)

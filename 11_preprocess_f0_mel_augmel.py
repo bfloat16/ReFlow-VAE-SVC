@@ -54,11 +54,6 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
         
             mel_t = mel_extractor.extract(audio_t, sample_rate)
             mel = mel_t.squeeze().to('cpu').numpy()
-            if mel.size == 0:
-                print('\n[Error] Mel extraction failed: ' + path_srcfile)
-                os.makedirs(os.path.dirname(path_skipfile), exist_ok=True)
-                shutil.move(path_srcfile, os.path.dirname(path_skipfile))
-                continue
             
             max_amp = float(torch.max(torch.abs(audio_t))) + 1e-5
             max_shift = min(1, np.log10(1/max_amp))

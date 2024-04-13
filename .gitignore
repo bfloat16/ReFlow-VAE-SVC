@@ -5,6 +5,7 @@ pretrain/nsf_hifigan/model
 pretrain/rmvpe/model.pt
 data/*
 __pycache__
+cache/*
 exp/*
 
 *.pt
