@@ -1,7 +1,3 @@
-'''
-author: wayn391@mastertones
-'''
-
 import os
 import time
 import yaml
@@ -10,7 +6,6 @@ import torch
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from . import utils
 from torch.utils.tensorboard import SummaryWriter
 
 class Saver(object):
@@ -21,39 +16,13 @@ class Saver(object):
         self.init_time = time.time()
         self.last_time = time.time()
 
-        os.makedirs(self.expdir, exist_ok=True)       
-
-        self.path_log_info = os.path.join(self.expdir, 'log_info.txt')
-
-        os.makedirs(self.expdir, exist_ok=True)       
+        os.makedirs(self.expdir, exist_ok=True)
 
         self.writer = SummaryWriter(os.path.join(self.expdir, 'logs'))
         
         path_config = os.path.join(self.expdir, 'config.yaml')
         with open(path_config, "w") as out_config:
             yaml.dump(dict(args), out_config)
-
-    def log_info(self, msg):
-        if isinstance(msg, dict):
-            msg_list = []
-            for k, v in msg.items():
-                tmp_str = ''
-                if isinstance(v, int):
-                    tmp_str = '{}: {:,}'.format(k, v)
-                else:
-                    tmp_str = '{}: {}'.format(k, v)
-
-                msg_list.append(tmp_str)
-            msg_str = '\n'.join(msg_list)
-        else:
-            msg_str = msg
-        
-        # dsplay
-        print(msg_str)
-
-        # save
-        with open(self.path_log_info, 'a') as fp:
-            fp.write(msg_str+'\n')
 
     def log_value(self, dict):
         for k, v in dict.items():

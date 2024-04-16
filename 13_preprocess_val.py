@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import random
+import scipy
 import librosa
 import torch
 import argparse
@@ -52,9 +53,13 @@ def preprocess(path, f0_extractor, volume_extractor, mel_extractor, units_encode
         path_skipfile = os.path.join(path_skipdir, file)
         
         # load audio
-        audio, _ = librosa.load(path_srcfile, sr=sample_rate)
+        audio, sr = librosa.load(path_srcfile, sr=sample_rate)
         if len(audio.shape) > 1:
             audio = librosa.to_mono(audio)
+        b, a = scipy.signal.butter(N=5, Wn=10, btype='highpass', fs=sr)
+        audio = scipy.signal.filtfilt(b, a, audio)
+
+        audio = np.ascontiguousarray(audio)
         audio_t = torch.from_numpy(audio).float().to(device)
         audio_t = audio_t.unsqueeze(0)
         

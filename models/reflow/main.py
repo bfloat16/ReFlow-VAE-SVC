@@ -115,7 +115,7 @@ class Unit2Wav_VAE(nn.Module):
         # vae noise
         x += torch.randn_like(x)
         # 
-        x = self.reflow_model(infer=infer, x_start=x, x_end=gt_spec, cond=cond, infer_step=infer_step, method='euler', use_tqdm=True)
+        x = self.reflow_model(infer=infer, x_start=x, x_end=gt_spec, cond=cond, infer_step=infer_step, method=method, use_tqdm=use_tqdm)
         
         if return_wav and infer:
             return vocoder.infer(x, f0)
@@ -135,6 +135,6 @@ class Unit2Wav_VAE(nn.Module):
         if self.aug_shift_embed is not None and aug_shift is not None:
             target_cond = target_cond + self.aug_shift_embed(aug_shift / 5)
 
-        latent = self.reflow_model(infer=True, x_end=input_mel, cond=source_cond, infer_step=infer_step, method='euler', use_tqdm=True)
-        output_mel = self.reflow_model(infer=True, x_start=latent, cond=target_cond, infer_step=infer_step, method='euler', use_tqdm=True)
+        latent = self.reflow_model(infer=True, x_end=input_mel, cond=source_cond, infer_step=infer_step, method=method, use_tqdm=True)
+        output_mel = self.reflow_model(infer=True, x_start=latent, cond=target_cond, infer_step=infer_step, method=method, use_tqdm=True)
         return output_mel

@@ -1,13 +1,14 @@
 import os
 import numpy as np
 import random
+import scipy.signal
 import librosa
 import torch
 import argparse
 import shutil
 from tools import utils
 from tqdm import tqdm
-from models.reflow.extractors import F0_Extractor
+from models.reflow.extractors import F0_Extractor, Volume_Extractor
 from models.reflow.vocoder import Vocoder
 from tools.utils import traverse_dir
 import torch.multiprocessing as mp
@@ -15,20 +16,23 @@ import torch.multiprocessing as mp
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str, default=r'./configs/reflow-vae-wavenet.yaml')
-    parser.add_argument("-n", "--num_processes", type=int, default=8)
+    parser.add_argument("-n", "--num_processes", type=int, default=5)
     return parser.parse_args(args=args, namespace=namespace)
     
 def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_size, f0_max, f0_min, vocoder_type, vocoder_ckpt, use_pitch_aug, num_processes, pitch_aug_dict):
-    path_srcdir  = os.path.join(path, 'audio')
-    path_f0dir  = os.path.join(path, 'f0')
-    path_meldir  = os.path.join(path, 'mel')
-    path_augmeldir  = os.path.join(path, 'aug_mel')
+    path_srcdir = os.path.join(path, 'audio')
+    path_f0dir = os.path.join(path, 'f0')
+    path_meldir = os.path.join(path, 'mel')
+    path_augmeldir = os.path.join(path, 'aug_mel')
+    path_augvoldir  = os.path.join(path, 'aug_vol')
     path_skipdir = os.path.join(path, 'skip')
 
     file_chunk = filelist[id::num_processes]
     
     f0_extractor = F0_Extractor(f0_extractor_type, sample_rate, hop_size, f0_min, f0_max)
     mel_extractor = Vocoder(vocoder_type, vocoder_ckpt)
+    volume_extractor = Volume_Extractor(hop_size)
+    
     if mel_extractor.vocoder_sample_rate != sample_rate or mel_extractor.vocoder_hop_size != hop_size:
         print('Error: Unmatch vocoder parameters')
         return None
@@ -39,13 +43,19 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
         path_f0file = os.path.join(path_f0dir, binfile)
         path_melfile = os.path.join(path_meldir, binfile)
         path_augmelfile = os.path.join(path_augmeldir, binfile)
+        path_augvolfile = os.path.join(path_augvoldir, binfile)
         path_skipfile = os.path.join(path_skipdir, file)
         
-        audio, _ = librosa.load(path_srcfile, sr=sample_rate)
+        audio, sr = librosa.load(path_srcfile, sr=sample_rate)
         if len(audio.shape) > 1:
             audio = librosa.to_mono(audio)
-        
-        f0 = f0_extractor.extract(audio, uv_interp = False)
+
+        b, a = scipy.signal.butter(N=5, Wn=10, btype='highpass', fs=sr)
+        audio = scipy.signal.filtfilt(b, a, audio)
+
+        audio = np.ascontiguousarray(audio)
+
+        f0 = f0_extractor.extract(audio, uv_interp=False)
         uv = f0 == 0
         if len(f0[~uv]) > 0:
             f0[uv] = np.interp(np.where(uv)[0], np.where(~uv)[0], f0[~uv])
@@ -63,8 +73,10 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
             else:
                 keyshift = 0
             
-            aug_mel_t = mel_extractor.extract(audio_t * (10 ** log10_vol_shift), sample_rate, keyshift = keyshift)
+            aug_mel_t = mel_extractor.extract(audio_t * (10 ** log10_vol_shift), sample_rate, keyshift=keyshift)
             aug_mel = aug_mel_t.squeeze().to('cpu').numpy()
+
+            aug_vol = volume_extractor.extract(audio * (10 ** log10_vol_shift))
 
             os.makedirs(os.path.dirname(path_f0file), exist_ok=True)
             np.save(path_f0file, f0)
@@ -72,6 +84,8 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
             np.save(path_melfile, mel.astype(np.float16))
             os.makedirs(os.path.dirname(path_augmelfile), exist_ok=True)
             np.save(path_augmelfile, aug_mel.astype(np.float16))
+            os.makedirs(os.path.dirname(path_augvolfile), exist_ok=True)
+            np.save(path_augvolfile, aug_vol)
             pitch_aug_dict[file] = keyshift
         else:
             print('\n[Error] F0 extraction failed: ' + path_srcfile)

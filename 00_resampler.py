@@ -40,8 +40,8 @@ def get_filelist(in_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_dir", type=str, default=r"./data/train/audio/ATRI")
-    parser.add_argument("--out_dir", type=str, default=r"./data/train/audio/ATRI_1")
+    parser.add_argument("--in_dir", type=str, default=r"./data/train/audio/绫地宁宁")
+    parser.add_argument("--out_dir", type=str, default=r"./data/train/audio/绫地宁宁_1")
     parser.add_argument('--num_processes', type=int, default=20)
     args = parser.parse_args()
     in_dir = args.in_dir

@@ -40,7 +40,7 @@ class Bi_RectifiedFlow(nn.Module):
         t += dt
         return x, t
         
-    def forward(self, infer=True, x_start=None, x_end=None, cond=None, t_start=0.0, t_end=1.0, infer_step=10, method='euler', use_tqdm=True):
+    def forward(self, infer=True, x_start=None, x_end=None, cond=None, t_start=0.0, t_end=1.0, infer_step=10, method='euler', use_tqdm=True): # x:unit+volume,
         if cond is not None:
             cond = cond.transpose(1, 2) # [B, H, T]
         if not infer:
@@ -86,7 +86,7 @@ class Bi_RectifiedFlow(nn.Module):
                 else:
                     for i in range(infer_step):
                         x, t = self.sample_rk4(x, t, dt, cond=cond)
-            
+                        
             else:
                 raise NotImplementedError(method)
                 

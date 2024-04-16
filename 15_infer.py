@@ -14,54 +14,20 @@ from tqdm import tqdm
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model_ckpt", type=str, default='exp/reflowvae-wavenet-dc/model_60000.pt')
-    parser.add_argument("-i", "--input", type=str, default='晴る.wav')
-    parser.add_argument("-o", "--output", type=str, default='晴る_108.wav')
-    parser.add_argument("-sid", "--source_spk_id", type=str, default='none', help="source speaker id (for multi-speaker model) | default: none")
-    parser.add_argument("-tid", "--target_spk_id", type=str, default=108, help="target speaker id (for multi-speaker model) | default: 0")
-    parser.add_argument("-mix", "--spk_mix_dict", type=str, default="None", help="mix-speaker dictionary (for multi-speaker model) | default: None")
-    parser.add_argument("-k", "--key", type=str, default=0, help="key changed (number of semitones) | default: 0")
-    parser.add_argument("-f",
-        "--formant_shift_key",
-        type=str,
-        required=False,
-        default=0,
-        help="formant changed (number of semitones) , only for pitch-augmented model| default: 0",
-    )
-    parser.add_argument(
-        "-pe",
-        "--pitch_extractor",
-        type=str,
-        required=False,
-        default='rmvpe',
-        help="pitch extrator type: parselmouth, dio, harvest, crepe, fcpe, rmvpe (default)",
-    )
-    parser.add_argument(
-        "-fmin",
-        "--f0_min",
-        type=str,
-        required=False,
-        default=40,
-        help="min f0 (Hz) | default: 50",
-    )
-    parser.add_argument(
-        "-fmax",
-        "--f0_max",
-        type=str,
-        required=False,
-        default=1200,
-        help="max f0 (Hz) | default: 1100",
-    )
-    parser.add_argument(
-        "-th",
-        "--threhold",
-        type=str,
-        required=False,
-        default=-50,
-        help="response threhold (dB) | default: -60",
-    )
-    parser.add_argument("-step", "--infer_step", type=str, default='50', help="sample steps | default: auto")
-    parser.add_argument("-method", "--method", type=str, default='euler', help="euler or rk4 | default: auto")
+    parser.add_argument("-m",      "--model_ckpt",        type=str, default='exp/reflowvae-wavenet-ATRI/model_200.pt')
+    parser.add_argument("-i",      "--input",             type=str, default='晴る.wav')
+    parser.add_argument("-o",      "--output",            type=str, default='晴る_ATRI.wav')
+    parser.add_argument("-sid",    "--source_spk_id",     type=str, default='none',  help="source speaker id (for multi-speaker model) | default: none")
+    parser.add_argument("-tid",    "--target_spk_id",     type=str, default=1,     help="target speaker id (for multi-speaker model) | default: 0")
+    parser.add_argument("-mix",    "--spk_mix_dict",      type=str, default="None",  help="mix-speaker dictionary (for multi-speaker model) | default: None")
+    parser.add_argument("-k",      "--key",               type=str, default=0,       help="key changed (number of semitones) | default: 0")
+    parser.add_argument("-f",      "--formant_shift_key", type=str, default=0,       help="formant changed (number of semitones) , only for pitch-augmented model| default: 0")
+    parser.add_argument("-pe",     "--pitch_extractor",   type=str, default='rmvpe', help="pitch extrator type: parselmouth, dio, harvest, crepe, fcpe, rmvpe (default)")
+    parser.add_argument("-fmin",   "--f0_min",            type=str, default=40)
+    parser.add_argument("-fmax",   "--f0_max",            type=str, default=2000)
+    parser.add_argument("-th",     "--threhold",          type=str, default=-50,     help="response threhold (dB) | default: -60")
+    parser.add_argument("-step",   "--infer_step",        type=str, default=50,    help="sample steps | default: auto")
+    parser.add_argument("-method", "--method",            type=str, default='euler', help="euler or rk4 or dopri8| default: auto")
     return parser.parse_args(args=args, namespace=namespace)
 
 def upsample(signal, factor):
@@ -92,33 +58,14 @@ def cross_fade(a: np.ndarray, b: np.ndarray, idx: int):
     np.copyto(dst=result[a.shape[0]:], src=b[fade_len:])
     return result
 
-def change_rms(data1, sr1, data2, sr2, rate):  # 1是输入音频，2是输出音频,rate是2的占比 from RVC
-    # print(data1.max(),data2.max())
-    rms1 = librosa.feature.rms(
-        y=data1, frame_length=sr1 // 2 * 2, hop_length=sr1 // 2
-    )  # 每半秒一个点
-    rms2 = librosa.feature.rms(y=data2.detach().cpu().numpy(), frame_length=sr2 // 2 * 2, hop_length=sr2 // 2)
-    rms1 = torch.from_numpy(rms1).to(data2.device)
-    rms1 = F.interpolate(
-        rms1.unsqueeze(0), size=data2.shape[0], mode="linear"
-    ).squeeze()
-    rms2 = torch.from_numpy(rms2).to(data2.device)
-    rms2 = F.interpolate(
-        rms2.unsqueeze(0), size=data2.shape[0], mode="linear"
-    ).squeeze()
-    rms2 = torch.max(rms2, torch.zeros_like(rms2) + 1e-6)
-    data2 *= (
-        torch.pow(rms1, torch.tensor(1 - rate))
-        * torch.pow(rms2, torch.tensor(rate - 1))
-    )
-    return data2
-
 if __name__ == '__main__':
     cmd = parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
     model, vocoder, args = load_model_vocoder(cmd.model_ckpt)
     
+    model_opt = torch.compile(model, dynamic=True)
+
     audio, sample_rate = librosa.load(cmd.input, sr=None)
     if len(audio.shape) > 1:
         audio = librosa.to_mono(audio)
@@ -177,20 +124,11 @@ if __name__ == '__main__':
     else:
         print('Target Speaker ID: '+ str(int(cmd.target_spk_id)))
     
-    # sampling method    
-    if cmd.method == 'auto':
-        method = args.infer.method
-    else:
-        method = cmd.method
-        
-    # infer step
-    if cmd.infer_step == 'auto':
-        infer_step = args.infer.infer_step
-    else:
-        infer_step = int(cmd.infer_step)
+    method = cmd.method
+    infer_step = cmd.infer_step
 
     if infer_step < 0:
-        raise ValueError('Invalid infer step: ' + cmd.infer_step)
+        raise ValueError('Invalid infer step: ' + infer_step)
     
     # forward and save the output
     result = np.zeros(0)
@@ -206,7 +144,7 @@ if __name__ == '__main__':
                 seg_f0 = output_f0[:, start_frame : start_frame + seg_units.size(1), :]
                 seg_volume = volume[:, start_frame : start_frame + seg_units.size(1), :]
                 
-                seg_output = model(
+                seg_output = model_opt(
                     seg_units, 
                     seg_f0, 
                     seg_volume, 
@@ -225,7 +163,7 @@ if __name__ == '__main__':
                 seg_input_f0 = input_f0[:, start_frame : start_frame + seg_input_mel.size(1), :]
                 seg_output_f0 = output_f0[:, start_frame : start_frame + seg_input_mel.size(1), :]
 
-                seg_output_mel = model.vae_infer(
+                seg_output_mel = model_opt.vae_infer(
                                     seg_input_mel, 
                                     seg_input_f0,
                                     source_spk_id,

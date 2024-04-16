@@ -2,7 +2,6 @@ import os
 import torch
 import librosa
 from tools.saver import Saver
-from tools import utils
 from torch import autocast
 
 def test(args, model, vocoder, loader_test, saver):
@@ -12,39 +11,18 @@ def test(args, model, vocoder, loader_test, saver):
     num_batches = len(loader_test)
     
     with torch.no_grad():
-        for bidx, data in enumerate(loader_test):
-            fn = data['name'][0]
-            print('--------')
-            print('{}/{} - {}'.format(bidx, num_batches, fn))
-
-            # unpack data
+        for _, data in enumerate(loader_test):
             for k in data.keys():
                 if not k.startswith('name'):
                     data[k] = data[k].to(args.device)
             print('>>', data['name'][0])
 
             # forward
-            mel = model(
-                    data['units'], 
-                    data['f0'], 
-                    data['volume'], 
-                    data['spk_id'],
-                    vocoder=vocoder,
-                    infer=True,
-                    return_wav=False,
-                    infer_step=args.infer.infer_step, 
-                    method=args.infer.method)
+            mel = model(data['units'], data['f0'], data['volume'], data['spk_id'], vocoder=vocoder, infer=True, return_wav=False, infer_step=args.infer.infer_step, method=args.infer.method)
             signal = vocoder.infer(mel, data['f0'])
            
             # loss
-            loss = model(
-                data['units'], 
-                data['f0'], 
-                data['volume'], 
-                data['spk_id'],
-                vocoder=vocoder,
-                gt_spec=data['mel'],
-                infer=False)
+            loss = model(data['units'], data['f0'], data['volume'], data['spk_id'], vocoder=vocoder, gt_spec=data['mel'], infer=False)
             test_loss += loss.item()
             
             # log mel
@@ -56,27 +34,19 @@ def test(args, model, vocoder, loader_test, saver):
             if len(audio.shape) > 1:
                 audio = librosa.to_mono(audio)
             audio = torch.from_numpy(audio).unsqueeze(0).to(signal)
-            saver.log_audio({fn+'/gt.wav': audio, fn+'/pred.wav': signal})
+            saver.log_audio({data['name'][0] + '/gt.wav': audio, data['name'][0] + '/pred.wav': signal})
             
     test_loss /= num_batches 
     
-    print(' [test_loss] test_loss:', test_loss)
+    print('test_loss:', test_loss)
     return test_loss
 
 def train(args, initial_global_step, model, optimizer, scheduler, vocoder, loader_train, loader_test):
-    # saver
     saver = Saver(args, initial_global_step=initial_global_step)
-
-    # model size
-    params_count = utils.get_network_paras_amount({'model': model})
-    saver.log_info('--- model size ---')
-    saver.log_info(params_count)
     
-    # run
     num_batches = len(loader_train)
     start_epoch = initial_global_step // num_batches
     model.train()
-    saver.log_info('======= start training =======')
     scaler = torch.cuda.amp.GradScaler()
     
     if args.train.amp_dtype == 'fp32':
@@ -121,23 +91,10 @@ def train(args, initial_global_step, model, optimizer, scheduler, vocoder, loade
             # log loss
             if saver.global_step % args.train.interval_log == 0:
                 current_lr =  optimizer.param_groups[0]['lr']
-                saver.log_info(
-                    'epoch: {} | {:3d}/{:3d} | {} | batch/s: {:.2f} | lr: {:.6} | loss: {:.3f} | time: {} | step: {}'.format(
-                        epoch,
-                        batch_idx,
-                        num_batches,
-                        args.env.expdir,
-                        args.train.interval_log/saver.get_interval_time(),
-                        current_lr,
-                        loss.item(),
-                        saver.get_total_time(),
-                        saver.global_step
-                    ))
+                print('epoch: {} | {:3d}/{:3d} | {} | batch/s: {:.2f} | lr: {:.6} | loss: {:.4f} | time: {} | step: {}'.format(
+                        epoch, batch_idx, num_batches, args.env.expdir, args.train.interval_log / saver.get_interval_time(), current_lr, loss.item(), saver.get_total_time(), saver.global_step))
                 
-                saver.log_value({
-                    'train/loss': loss.item(),
-                    'train/lr': current_lr
-                })
+                saver.log_value({'train/loss': loss.item(), 'train/lr': current_lr})
             
             # validation
             if saver.global_step % args.train.interval_val == 0:
@@ -149,10 +106,7 @@ def train(args, initial_global_step, model, optimizer, scheduler, vocoder, loade
                 if last_val_step % args.train.interval_force_save != 0:
                     saver.delete_model(postfix=f'{last_val_step}')
                 
-                # run testing set
                 test_loss = test(args, model, vocoder, loader_test, saver)
-                
-                # log loss
-                saver.log_info(' --- <validation> --- \nloss: {:.3f}. '.format(test_loss))         
+                    
                 saver.log_value({'validation/loss': test_loss})      
                 model.train()

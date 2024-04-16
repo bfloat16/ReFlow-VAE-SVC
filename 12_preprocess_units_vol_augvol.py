@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import random
+import scipy
 import librosa
 import torch
 import argparse
@@ -20,7 +21,6 @@ def preprocess(id, path, filelist, device, encoder_type, encoder_ckpt, encoder_s
     path_srcdir  = os.path.join(path, 'audio')
     path_unitsdir  = os.path.join(path, 'units')
     path_volumedir  = os.path.join(path, 'volume')
-    path_augvoldir  = os.path.join(path, 'aug_vol')
 
     file_chunk = filelist[id::num_processes]
     
@@ -34,21 +34,20 @@ def preprocess(id, path, filelist, device, encoder_type, encoder_ckpt, encoder_s
         path_srcfile = os.path.join(path_srcdir, file)
         path_unitsfile = os.path.join(path_unitsdir, binfile)
         path_volumefile = os.path.join(path_volumedir, binfile)
-        path_augvolfile = os.path.join(path_augvoldir, binfile)
 
-        audio, _ = librosa.load(path_srcfile, sr=sample_rate)
+        audio, sr = librosa.load(path_srcfile, sr=sample_rate)
         if len(audio.shape) > 1:
             audio = librosa.to_mono(audio)
+
+        b, a = scipy.signal.butter(N=5, Wn=10, btype='highpass', fs=sr)
+        audio = scipy.signal.filtfilt(b, a, audio)
+
+        audio = np.ascontiguousarray(audio)
+
         audio_t = torch.from_numpy(audio).float().to(device)
         audio_t = audio_t.unsqueeze(0)
 
         volume = volume_extractor.extract(audio)
-
-        max_amp = float(torch.max(torch.abs(audio_t))) + 1e-5
-        max_shift = min(1, np.log10(1/max_amp))
-        log10_vol_shift = random.uniform(-1, max_shift)
-
-        aug_vol = volume_extractor.extract(audio * (10 ** log10_vol_shift))
 
         units_t = units_encoder.encode(audio_t, sample_rate, hop_size)
         units = units_t.squeeze().to('cpu').numpy()
@@ -57,8 +56,6 @@ def preprocess(id, path, filelist, device, encoder_type, encoder_ckpt, encoder_s
         np.save(path_unitsfile, units.astype(np.float16))
         os.makedirs(os.path.dirname(path_volumefile), exist_ok=True)
         np.save(path_volumefile, volume)
-        os.makedirs(os.path.dirname(path_augvolfile), exist_ok=True)
-        np.save(path_augvolfile, aug_vol)
                 
 if __name__ == '__main__':
     cmd = parse_args()

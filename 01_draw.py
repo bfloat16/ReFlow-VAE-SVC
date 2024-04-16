@@ -2,7 +2,7 @@ from pydub import AudioSegment
 import os
 import shutil
 
-def move(src_dir, dest_dir, min_duration=3, limit=1):
+def move(src_dir, dest_dir, min_duration=3, limit=5):
     for root, dirs, files in os.walk(src_dir):
         audio_files = []
         for file in files:

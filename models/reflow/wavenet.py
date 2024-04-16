@@ -56,7 +56,7 @@ class ResidualBlock(nn.Module):
         # Using torch.split instead of torch.chunk to avoid using onnx::Slice
         residual, skip = torch.split(y, [self.residual_channels, self.residual_channels], dim=1)
         return (x + residual) / math.sqrt(2.0), skip
-
+    
 class WaveNet(nn.Module):
     def __init__(self, in_dims=128, n_layers=20, n_chans=384, n_hidden=256, dilation=1, kernel_size=3, transformer_use=False, transformer_roformer_use=False, transformer_n_layers=2, transformer_n_head=4):
         super().__init__()
