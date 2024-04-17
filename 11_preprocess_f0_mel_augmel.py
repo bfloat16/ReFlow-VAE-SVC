@@ -16,7 +16,7 @@ import torch.multiprocessing as mp
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", type=str, default=r'./configs/reflow-vae-wavenet.yaml')
-    parser.add_argument("-n", "--num_processes", type=int, default=5)
+    parser.add_argument("-n", "--num_processes", type=int, default=10)
     return parser.parse_args(args=args, namespace=namespace)
     
 def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_size, f0_max, f0_min, vocoder_type, vocoder_ckpt, use_pitch_aug, num_processes, pitch_aug_dict):
@@ -49,11 +49,6 @@ def preprocess(id, path, filelist, device, f0_extractor_type, sample_rate, hop_s
         audio, sr = librosa.load(path_srcfile, sr=sample_rate)
         if len(audio.shape) > 1:
             audio = librosa.to_mono(audio)
-
-        b, a = scipy.signal.butter(N=5, Wn=10, btype='highpass', fs=sr)
-        audio = scipy.signal.filtfilt(b, a, audio)
-
-        audio = np.ascontiguousarray(audio)
 
         f0 = f0_extractor.extract(audio, uv_interp=False)
         uv = f0 == 0

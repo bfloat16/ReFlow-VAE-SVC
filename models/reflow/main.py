@@ -131,7 +131,7 @@ class Unit2Wav_VAE(nn.Module):
                     spk_id_torch = torch.LongTensor(np.array([[k]])).to(input_mel.device)
                     target_cond = target_cond + v * self.spk_embed(spk_id_torch)
             else:
-                target_cond = target_cond + self.spk_embed(output_spk_id - 1)
+                target_cond = target_cond + self.spk_embed(output_spk_id)
         if self.aug_shift_embed is not None and aug_shift is not None:
             target_cond = target_cond + self.aug_shift_embed(aug_shift / 5)
 

@@ -14,11 +14,11 @@ from tqdm import tqdm
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m",      "--model_ckpt",        type=str, default='exp/reflowvae-wavenet-ATRI/model_200.pt')
-    parser.add_argument("-i",      "--input",             type=str, default='晴る.wav')
-    parser.add_argument("-o",      "--output",            type=str, default='晴る_ATRI.wav')
+    parser.add_argument("-m",      "--model_ckpt",        type=str, default='exp/reflowvae-wavenet-ATRI-三月七/model_10000.pt')
+    parser.add_argument("-i",      "--input",             type=str, default='wavs/side3_yz_mar7th_169.wav')
+    parser.add_argument("-o",      "--output",            type=str, default='wavs/side3_yz_mar7th_169_ATRI.wav')
     parser.add_argument("-sid",    "--source_spk_id",     type=str, default='none',  help="source speaker id (for multi-speaker model) | default: none")
-    parser.add_argument("-tid",    "--target_spk_id",     type=str, default=1,     help="target speaker id (for multi-speaker model) | default: 0")
+    parser.add_argument("-tid",    "--target_spk_id",     type=str, default=0,     help="target speaker id (for multi-speaker model) | default: 0")
     parser.add_argument("-mix",    "--spk_mix_dict",      type=str, default="None",  help="mix-speaker dictionary (for multi-speaker model) | default: None")
     parser.add_argument("-k",      "--key",               type=str, default=0,       help="key changed (number of semitones) | default: 0")
     parser.add_argument("-f",      "--formant_shift_key", type=str, default=0,       help="formant changed (number of semitones) , only for pitch-augmented model| default: 0")
@@ -63,8 +63,6 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
     model, vocoder, args = load_model_vocoder(cmd.model_ckpt)
-    
-    model_opt = torch.compile(model, dynamic=True)
 
     audio, sample_rate = librosa.load(cmd.input, sr=None)
     if len(audio.shape) > 1:
@@ -144,7 +142,7 @@ if __name__ == '__main__':
                 seg_f0 = output_f0[:, start_frame : start_frame + seg_units.size(1), :]
                 seg_volume = volume[:, start_frame : start_frame + seg_units.size(1), :]
                 
-                seg_output = model_opt(
+                seg_output = model(
                     seg_units, 
                     seg_f0, 
                     seg_volume, 
@@ -163,7 +161,7 @@ if __name__ == '__main__':
                 seg_input_f0 = input_f0[:, start_frame : start_frame + seg_input_mel.size(1), :]
                 seg_output_f0 = output_f0[:, start_frame : start_frame + seg_input_mel.size(1), :]
 
-                seg_output_mel = model_opt.vae_infer(
+                seg_output_mel = model.vae_infer(
                                     seg_input_mel, 
                                     seg_input_f0,
                                     source_spk_id,
@@ -172,7 +170,8 @@ if __name__ == '__main__':
                                     spk_mix_dict,
                                     formant_shift_key,
                                     infer_step, 
-                                    method)
+                                    method
+                                    )
                 seg_output = vocoder.infer(seg_output_mel, seg_output_f0)
             
             seg_output = seg_output.squeeze().cpu().numpy()
