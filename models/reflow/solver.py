@@ -3,6 +3,7 @@ import torch
 import librosa
 from tools.saver import Saver
 from torch import autocast
+from tqdm import tqdm
 
 def test(args, model, vocoder, loader_test, saver):
     model.eval()
@@ -11,14 +12,13 @@ def test(args, model, vocoder, loader_test, saver):
     num_batches = len(loader_test)
     
     with torch.no_grad():
-        for _, data in enumerate(loader_test):
+        for data in tqdm(loader_test):
             for k in data.keys():
                 if not k.startswith('name'):
                     data[k] = data[k].to(args.device)
-            print('>>', data['name'][0])
 
             # forward
-            mel = model(data['units'], data['f0'], data['volume'], data['spk_id'], vocoder=vocoder, infer=True, return_wav=False, infer_step=args.infer.infer_step, method=args.infer.method)
+            mel = model(data['units'], data['f0'], data['volume'], data['spk_id'], vocoder=vocoder, infer=True, return_wav=False, infer_step=args.infer.infer_step, method=args.infer.method, use_tqdm=False)
             signal = vocoder.infer(mel, data['f0'])
            
             # loss
@@ -91,7 +91,7 @@ def train(args, initial_global_step, model, optimizer, scheduler, vocoder, loade
             # log loss
             if saver.global_step % args.train.interval_log == 0:
                 current_lr =  optimizer.param_groups[0]['lr']
-                print('epoch: {} | {:3d}/{:3d} | {} | batch/s: {:.2f} | lr: {:.6} | loss: {:.4f} | time: {} | step: {}'.format(
+                print('epoch: {:<5} | {:5d}/{:5d} | {} | batch/s: {:<6.2f} | lr: {:.6} | loss: {:.4f} | time: {} | step: {}'.format(
                         epoch, batch_idx, num_batches, args.env.expdir, args.train.interval_log / saver.get_interval_time(), current_lr, loss.item(), saver.get_total_time(), saver.global_step))
                 
                 saver.log_value({'train/loss': loss.item(), 'train/lr': current_lr})

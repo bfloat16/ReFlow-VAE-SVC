@@ -3,7 +3,6 @@ import random
 import numpy as np
 import torch
 import random
-import librosa
 from tqdm import tqdm
 from tools.utils import traverse_dir
 from torch.utils.data import Dataset
@@ -50,7 +49,7 @@ def get_data_loaders(args, whole_audio=False):
         pin_memory=True
         )
     return loader_train, loader_valid 
-
+    
 class AudioDataset(Dataset):
     def __init__(self, path_root, waveform_sec, hop_size, sample_rate, spk_dict, load_all_data=True, whole_audio=False, extensions=['wav'], n_spk=1, device='cpu', fp16=False, use_aug=False):
         super().__init__()
@@ -63,15 +62,15 @@ class AudioDataset(Dataset):
         self.use_aug = use_aug
         self.data_buffer={}
         self.pitch_aug_dict = np.load(os.path.join(self.path_root, 'pitch_aug_dict.npy'), allow_pickle=True).item()
+        self.time_dict = np.load(os.path.join(self.path_root, 'time_dict.npy'), allow_pickle=True).item()
         self.spk_dict = spk_dict
         if load_all_data:
             print('Load all the data from :', path_root)
         else:
             print('Load the f0, volume, mel data from :', path_root)
-            
+
         for name_ext in tqdm(self.paths, total=len(self.paths)):
-            path_audio = os.path.join(self.path_root, 'audio', name_ext)
-            duration = librosa.get_duration(path=path_audio, sr=self.sample_rate)
+            duration = self.time_dict[name_ext]
             
             path_f0 = os.path.join(self.path_root, 'f0', name_ext) + '.npy'
             f0 = np.load(path_f0)
@@ -93,7 +92,10 @@ class AudioDataset(Dataset):
             if spk_id > n_spk:
                 raise ValueError(f" [x] spk_id {spk_id} is larger than n_spk {n_spk}")
             spk_id = torch.LongTensor(np.array([spk_id])).to(device)
-            
+
+            if fp16:
+                mel = mel.half()
+
             if load_all_data:
                 path_augmel = os.path.join(self.path_root, 'aug_mel', name_ext) + '.npy'
                 aug_mel = np.load(path_augmel)
@@ -127,7 +129,7 @@ class AudioDataset(Dataset):
                         'spk_id': spk_id,
                         'mel': mel
                         }
-           
+
     def __getitem__(self, file_idx):
         name_ext = self.paths[file_idx]
         data_buffer = self.data_buffer[name_ext]

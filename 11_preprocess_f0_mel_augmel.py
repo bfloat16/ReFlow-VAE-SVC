@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import random
-import scipy.signal
 import librosa
 import torch
 import argparse

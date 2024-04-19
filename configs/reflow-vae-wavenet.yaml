@@ -17,7 +17,7 @@ data:
   valid_path: data/底模/valid
 device: cuda
 env:
-  expdir: exp/reflowvae-wavenet-attention_
+  expdir: exp/reflowvae-wavenet-attention_1079h
   gpu_id: 0
 infer:
   infer_step: 50
@@ -26,25 +26,25 @@ model:
   back_bone: wavenet
   n_chans: 768
   n_hidden: 256
-  n_layers: 30
+  n_layers: 20
   n_spk: 771
   type: RectifiedFlow_VAE
   use_attention: true
   use_pitch_aug: false
 train:
   amp_dtype: fp16
-  batch_size: 50
-  cache_all_data: true
+  batch_size: 350
+  cache_all_data: false
   cache_device: cpu
   cache_fp16: true
-  decay_step: 150000
+  decay_step: 250000
   epochs: 100000
   gamma: 0.5
   interval_force_save: 10000
   interval_log: 100
-  interval_val: 2000
-  lr: 0.00012
-  num_workers: 4
+  interval_val: 5000
+  lr: 0.00015
+  num_workers: 2
   save_opt: false
   weight_decay: 0
 vocoder:

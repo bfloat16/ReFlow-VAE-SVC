@@ -3,6 +3,7 @@ pretrain/fish/firefly-gan-base-generator.ckpt
 pretrain/nsf_hifigan/config.json
 pretrain/nsf_hifigan/model
 pretrain/rmvpe/model.pt
+
 data/*
 __pycache__
 cache/*
@@ -10,3 +11,4 @@ exp/*
 
 *.pt
 *.wav
+*.txt
