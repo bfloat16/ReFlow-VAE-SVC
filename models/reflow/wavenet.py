@@ -114,7 +114,7 @@ class WaveNet(nn.Module):
         x = spec.squeeze(1)
         x = self.input_projection(x)  # [B, residual_channel, T]
 
-        x = F.relu(x)
+        x = F.silu(x)
         diffusion_step = self.diffusion_embedding(diffusion_step)
         diffusion_step = self.mlp(diffusion_step)
         skip = []
@@ -124,7 +124,7 @@ class WaveNet(nn.Module):
 
         x = torch.sum(torch.stack(skip), dim=0) / sqrt(len(self.residual_layers))
         x = self.skip_projection(x)
-        x = F.relu(x)
+        x = F.silu(x)
         if self.transformer is not None:
             if self.transformer_roformer_use:
                 x = self.transformer(x.transpose(1, 2))[0].transpose(1, 2)

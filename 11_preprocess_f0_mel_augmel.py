@@ -14,7 +14,7 @@ import torch.multiprocessing as mp
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=str, default=r'./configs/reflow-vae-wavenet.yaml')
+    parser.add_argument("-c", "--config", type=str, default=r'configs/reflow-vae-wavenet-底模.yaml')
     parser.add_argument("-n", "--num_processes", type=int, default=10)
     return parser.parse_args(args=args, namespace=namespace)
     

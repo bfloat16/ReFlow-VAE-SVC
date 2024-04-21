@@ -9,7 +9,7 @@ from models.reflow.extractors import Volume_Extractor, Units_Encoder
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", type=str, default=r'./configs/reflow-vae-wavenet.yaml')
+    parser.add_argument("-c", "--config", type=str, default=r'configs/reflow-vae-wavenet-底模.yaml')
     parser.add_argument("-f", "--filelist", type=str, default=r'./filelist_0.txt')
     return parser.parse_args(args=args, namespace=namespace)
     

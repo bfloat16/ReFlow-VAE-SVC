@@ -14,11 +14,11 @@ from tqdm import tqdm
 
 def parse_args(args=None, namespace=None):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m",      "--model_ckpt",        type=str, default='exp/reflowvae-wavenet-ATRI-三月七/model_10000.pt')
-    parser.add_argument("-i",      "--input",             type=str, default='wavs/side3_yz_mar7th_169.wav')
-    parser.add_argument("-o",      "--output",            type=str, default='wavs/side3_yz_mar7th_169_ATRI.wav')
+    parser.add_argument("-m",      "--model_ckpt",        type=str, default='exp/reflowvae-wavenet-attention_1079h/model_240000.pt')
+    parser.add_argument("-i",      "--input",             type=str, default='wavs/我多想说再见啊.wav')
+    parser.add_argument("-o",      "--output",            type=str, default='wavs/我多想说再见啊_547.wav')
     parser.add_argument("-sid",    "--source_spk_id",     type=str, default='none',  help="source speaker id (for multi-speaker model) | default: none")
-    parser.add_argument("-tid",    "--target_spk_id",     type=str, default=0,     help="target speaker id (for multi-speaker model) | default: 0")
+    parser.add_argument("-tid",    "--target_spk_id",     type=str, default=547,     help="target speaker id (for multi-speaker model) | default: 0")
     parser.add_argument("-mix",    "--spk_mix_dict",      type=str, default="None",  help="mix-speaker dictionary (for multi-speaker model) | default: None")
     parser.add_argument("-k",      "--key",               type=str, default=0,       help="key changed (number of semitones) | default: 0")
     parser.add_argument("-f",      "--formant_shift_key", type=str, default=0,       help="formant changed (number of semitones) , only for pitch-augmented model| default: 0")

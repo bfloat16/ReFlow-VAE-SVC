@@ -5,6 +5,17 @@ from tools.saver import Saver
 from torch import autocast
 from tqdm import tqdm
 
+def clip_grad_value_(parameters, clip_value):
+    if isinstance(parameters, torch.Tensor):
+        parameters = [parameters]
+
+    parameters_with_grad = [p for p in parameters if p.grad is not None]
+
+    torch.nn.utils.clip_grad_value_(parameters_with_grad, clip_value)
+    
+    total_norm = torch.norm(torch.stack([torch.norm(p.grad.detach(), 2) for p in parameters_with_grad]), 2)
+    return total_norm
+
 def test(args, model, vocoder, loader_test, saver):
     model.eval()
 
@@ -81,9 +92,13 @@ def train(args, initial_global_step, model, optimizer, scheduler, vocoder, loade
                 # backpropagate
                 if dtype == torch.float32:
                     loss.backward()
+                    grad_norm = clip_grad_value_(model.parameters(), 1)
                     optimizer.step()
                 else:
                     scaler.scale(loss).backward()
+                    #scaler.unscale_(optimizer)
+                    #grad_norm = clip_grad_value_(model.parameters(), 1)
+                    grad_norm = 0
                     scaler.step(optimizer)
                     scaler.update()
                 scheduler.step()
@@ -91,10 +106,10 @@ def train(args, initial_global_step, model, optimizer, scheduler, vocoder, loade
             # log loss
             if saver.global_step % args.train.interval_log == 0:
                 current_lr =  optimizer.param_groups[0]['lr']
-                print('epoch: {:<5} | {:5d}/{:5d} | {} | batch/s: {:<6.2f} | lr: {:.6} | loss: {:.4f} | time: {} | step: {}'.format(
-                        epoch, batch_idx, num_batches, args.env.expdir, args.train.interval_log / saver.get_interval_time(), current_lr, loss.item(), saver.get_total_time(), saver.global_step))
+                print('epoch: {:<5} | {:5d}/{:5d} | {} | batch/s: {:<6.2f} | lr: {:.6} | loss: {:.4f} | time: {} | step: {:<6} | grad: {:.2f}'.format(
+                        epoch, batch_idx, num_batches, args.env.expdir, args.train.interval_log / saver.get_interval_time(), current_lr, loss.item(), saver.get_total_time(), saver.global_step, grad_norm))
                 
-                saver.log_value({'train/loss': loss.item(), 'train/lr': current_lr})
+                saver.log_value({'train/loss': loss.item(), 'train/lr': current_lr, 'train/grad_norm': grad_norm})
             
             # validation
             if saver.global_step % args.train.interval_val == 0:

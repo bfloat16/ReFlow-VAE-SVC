@@ -3,7 +3,7 @@ import os
 import shutil
 import random
 
-def move(src_dir, dest_dir, min_duration=3, limit=1, dir_limit=50):
+def move(src_dir, dest_dir, min_duration=2, limit=1, dir_limit=50):
     all_dirs = [os.path.join(root, d) for root, dirs, _ in os.walk(src_dir) for d in dirs]
     selected_dirs = random.sample(all_dirs, min(len(all_dirs), dir_limit))
     
